@@ -1,0 +1,69 @@
+# Universal Dataset Maker Configuration Example
+# This file demonstrates all available configuration options
+
+# Required: Input and output
+input_dir: "path/to/your/audio/files"
+dataset_name: "my_awesome_dataset"
+output_dir: "data"  # Optional, defaults to "data"
+
+# ASR Backend Configuration
+asr_backend: "faster-whisper"  # Options: faster-whisper, huggingface, funasr, openai, azure
+
+# Backend-specific configuration
+asr_config:
+  # Faster-Whisper options
+  model_size: "base"  # tiny, base, small, medium, large-v3
+  device: "cuda"      # cuda, cpu, auto
+  compute_type: "float16"  # float16, int8, int8_float16
+  language: null      # null for auto-detect, or "en", "zh", "ja", etc.
+  beam_size: 5
+  vad_filter: true
+
+  # HuggingFace options (when using backend: huggingface)
+  # model_id: "openai/whisper-base"
+  # device: "cuda"
+  # language: "en"
+  # task: "transcribe"
+
+  # FunASR options (when using backend: funasr)
+  # model_name: "paraformer-zh"
+  # device: "cuda"
+  # language: "zh"
+  # batch_size: 1
+
+  # OpenAI API options (when using backend: openai)
+  # api_key: "your-api-key-here"  # Or use OPENAI_API_KEY env var
+  # model: "whisper-1"
+  # response_format: "verbose_json"
+  # temperature: 0
+
+# Output Format Configuration
+output_format: "vibevoice"  # Options: vibevoice, simple, extended, huggingface, espnet, custom
+
+# Format-specific configuration
+format_config:
+  # VibeVoice format options
+  speaker_prefix: "Speaker 0: "
+
+  # Extended format options (when using format: extended)
+  # include_language: true
+  # include_confidence: true
+  # include_duration: true
+
+  # HuggingFace format options (when using format: huggingface)
+  # text_column: "sentence"
+  # audio_column: "audio"
+  # include_language: false
+
+  # Custom format options (when using format: custom)
+  # field_mapping:
+  #   transcription: "text"
+  #   file_path: "audio"
+  #   lang: "metadata.language"
+
+# VAD (Voice Activity Detection) Configuration
+use_vad: true  # Set to false to process files as-is without segmentation
+
+vad_config:
+  min_speech_duration_ms: 250  # Minimum speech segment duration
+  min_silence_duration_ms: 100  # Minimum silence between segments
