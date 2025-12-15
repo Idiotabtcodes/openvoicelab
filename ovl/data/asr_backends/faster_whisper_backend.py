@@ -19,7 +19,7 @@ class FasterWhisperBackend(ASRBackend):
         super().__init__(config)
 
         # Get configuration
-        self.model_size = self.config.get("model_size", "base")  # tiny, base, small, medium, large-v3
+        self.model_size = self.config.get("model_size", "base")  # tiny, base, small, medium, large-v3, or path to local model
         self.device = self.config.get("device", "auto")  # auto, cuda, cpu
         self.compute_type = self.config.get("compute_type", "default")  # default, int8, float16, int8_float16
         self.language = self.config.get("language")  # Optional: force language
@@ -27,12 +27,26 @@ class FasterWhisperBackend(ASRBackend):
         self.vad_filter = self.config.get("vad_filter", True)  # Enable VAD filtering
         self.vad_parameters = self.config.get("vad_parameters")
         self.task = self.config.get("task", "transcribe")  # or "translate"
+        self.download_root = self.config.get("download_root")  # Optional: custom cache directory
+        self.local_files_only = self.config.get("local_files_only", False)  # Use only cached models
 
         # Initialize model
+        # Note: Faster-Whisper automatically caches models to ~/.cache/huggingface/hub/
+        # and reuses them. You can also pass a local path directly as model_size_or_path.
+        model_kwargs = {
+            "device": self.device,
+            "compute_type": self.compute_type,
+        }
+
+        if self.download_root:
+            model_kwargs["download_root"] = self.download_root
+
+        if self.local_files_only:
+            model_kwargs["local_files_only"] = True
+
         self.model = WhisperModel(
             self.model_size,
-            device=self.device,
-            compute_type=self.compute_type,
+            **model_kwargs
         )
 
     def transcribe(self, audio_path: Union[str, Path]) -> TranscriptionResult:

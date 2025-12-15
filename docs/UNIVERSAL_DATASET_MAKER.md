@@ -375,6 +375,115 @@ python -m ovl.data.cli \
     --asr-config '{"model_name": "paraformer-zh", "language": "zh"}'
 ```
 
+## Offline Usage and Local Models
+
+All ASR backends are designed to **prefer cached/local models first** for convenient offline usage.
+
+### Automatic Caching
+
+Models are automatically cached after first download:
+
+- **HuggingFace models**: Cached in `~/.cache/huggingface/hub/`
+- **Faster-Whisper models**: Cached in `~/.cache/huggingface/hub/`
+- **FunASR models**: Cached in `~/.cache/modelscope/hub/`
+
+Once cached, the models work offline automatically without any configuration needed.
+
+### Force Offline Mode
+
+#### HuggingFace Backend
+
+```python
+# Automatically tries cached model first, downloads only if needed
+maker = UniversalDatasetMaker(
+    asr_backend="huggingface",
+    asr_config={"model_id": "openai/whisper-base"},
+)
+
+# The backend automatically:
+# 1. First tries: local_files_only=True (uses cache)
+# 2. If not cached: downloads from HuggingFace
+```
+
+#### Faster-Whisper Backend
+
+```python
+# Use only cached models (fail if not cached)
+maker = UniversalDatasetMaker(
+    asr_backend="faster-whisper",
+    asr_config={
+        "model_size": "base",
+        "local_files_only": True,  # Fail if model not cached
+    },
+)
+
+# Custom cache directory
+maker = UniversalDatasetMaker(
+    asr_backend="faster-whisper",
+    asr_config={
+        "model_size": "base",
+        "download_root": "/path/to/custom/cache",
+    },
+)
+```
+
+### Using Local Model Files
+
+You can use local model files instead of downloading:
+
+#### HuggingFace Backend
+
+```python
+# Pass local model path instead of model ID
+maker = UniversalDatasetMaker(
+    asr_backend="huggingface",
+    asr_config={
+        "model_id": "/path/to/local/whisper-base",
+    },
+)
+```
+
+#### Faster-Whisper Backend
+
+```python
+# Pass local model directory as model_size
+maker = UniversalDatasetMaker(
+    asr_backend="faster-whisper",
+    asr_config={
+        "model_size": "/path/to/local/whisper-base-ct2",  # CTranslate2 format
+    },
+)
+```
+
+### Environment Variables for Offline Mode
+
+```bash
+# Set HuggingFace offline mode globally
+export HF_HUB_OFFLINE=1
+
+# Custom cache directory
+export HF_HOME=/path/to/custom/cache
+
+# Then run your script
+python my_dataset_script.py
+```
+
+### Pre-downloading Models
+
+To ensure offline usage, pre-download models once:
+
+```python
+# Pre-download HuggingFace model
+from transformers import pipeline
+pipe = pipeline("automatic-speech-recognition", model="openai/whisper-base")
+
+# Pre-download Faster-Whisper model
+from faster_whisper import WhisperModel
+model = WhisperModel("base")
+
+# Models are now cached and will work offline
+```
+
 ## Complete Examples
 
 See the `examples/dataset_maker_configs/` directory for complete examples:
@@ -394,6 +503,8 @@ See the `examples/dataset_maker_configs/` directory for complete examples:
 | API Support | No | Yes (OpenAI, Azure) |
 | Format Templates | Fixed | Pluggable |
 | Batch Processing | No | Yes (backend-dependent) |
+| Offline Mode | Cached models | Cached models (prefers local first) |
+| Local Models | Not documented | Full support |
 
 ## Installation
 

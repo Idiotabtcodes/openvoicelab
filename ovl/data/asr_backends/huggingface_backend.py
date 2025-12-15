@@ -30,14 +30,28 @@ class HuggingFaceASRBackend(ASRBackend):
         if self.task:
             generate_kwargs["task"] = self.task
 
-        self.pipe = hf_pipeline(
-            "automatic-speech-recognition",
-            model=self.model_id,
-            device=self.device,
-            chunk_length_s=self.chunk_length_s,
-            return_timestamps=self.return_timestamps,
-            generate_kwargs=generate_kwargs if generate_kwargs else None,
-        )
+        # Try to use cached/local model first for offline usage
+        try:
+            self.pipe = hf_pipeline(
+                "automatic-speech-recognition",
+                model=self.model_id,
+                device=self.device,
+                chunk_length_s=self.chunk_length_s,
+                return_timestamps=self.return_timestamps,
+                generate_kwargs=generate_kwargs if generate_kwargs else None,
+                local_files_only=True,  # Use cached model first
+            )
+        except Exception:
+            # If local model not found, download from HuggingFace
+            self.pipe = hf_pipeline(
+                "automatic-speech-recognition",
+                model=self.model_id,
+                device=self.device,
+                chunk_length_s=self.chunk_length_s,
+                return_timestamps=self.return_timestamps,
+                generate_kwargs=generate_kwargs if generate_kwargs else None,
+                local_files_only=False,
+            )
 
     def _auto_detect_device(self) -> str:
         """Auto-detect best available device"""

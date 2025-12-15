@@ -87,13 +87,29 @@ class DatasetBuilder:
             return {}
 
         resolved_device = device or self._resolve_device()
-        pipe = hf_pipeline(
-            "automatic-speech-recognition",
-            model=model_id,
-            device=resolved_device,
-            chunk_length_s=30,  # Process in 30-second chunks
-            return_timestamps=True,  # Enable long-form transcription
-        )
+
+        # Try to use cached/local model first for offline usage
+        pipe = None
+        try:
+            pipe = hf_pipeline(
+                "automatic-speech-recognition",
+                model=model_id,
+                device=resolved_device,
+                chunk_length_s=30,  # Process in 30-second chunks
+                return_timestamps=True,  # Enable long-form transcription
+                local_files_only=True,  # Use cached model first
+            )
+        except Exception:
+            # If local model not found, download from HuggingFace
+            pipe = hf_pipeline(
+                "automatic-speech-recognition",
+                model=model_id,
+                device=resolved_device,
+                chunk_length_s=30,
+                return_timestamps=True,
+                local_files_only=False,
+            )
+
         transcripts: Dict[Path, str] = {}
 
         total = len(paths)
